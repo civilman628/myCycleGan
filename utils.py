@@ -7,6 +7,8 @@ import pprint
 import scipy.misc
 import numpy as np
 import copy
+import cv2
+import base64
 
 pp = pprint.PrettyPrinter()
 
@@ -39,6 +41,12 @@ class ImagePool(object):
             return image
 
 def load_test_data(image_path, fine_size=256):
+    img = imread(image_path)
+    img = scipy.misc.imresize(img, [fine_size, fine_size])
+    img = img/127.5 - 1
+    return img
+
+def load_image_string(image_path, fine_size=256):
     img = imread(image_path)
     img = scipy.misc.imresize(img, [fine_size, fine_size])
     img = img/127.5 - 1
@@ -83,6 +91,8 @@ def imread(path, is_grayscale = False):
     else:
         return scipy.misc.imread(path, mode='RGB').astype(np.float)
 
+
+
 def merge_images(images, size):
     return inverse_transform(images)
 
@@ -119,3 +129,27 @@ def transform(image, npx=64, is_crop=True, resize_w=64):
 
 def inverse_transform(images):
     return (images+1.)/2.
+
+
+def string2image(self,imagestring):
+    first_coma=imagestring.find(',')
+    img_bytes=base64.decodestring(imagestring[first_coma:])
+    image=np.asarray(bytearray(img_bytes),dtype='uint8')
+    image=cv2.imdecode(image,cv2.IMREAD_COLOR)
+    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+    #print (image)
+    image=Image.fromarray(image)#,'RGB')
+    if image.mode!='RGB':
+        image=image.convert('RGB')
+
+    longersize = max(image.size)
+    print(longersize)
+    background = Image.new('RGB', (longersize, longersize), "white")
+    background.paste(image, (int((longersize-image.size[0])/2), int((longersize-image.size[1])/2)))
+    image = background
+
+    #img.save('test.jpg')
+    image = np.array(
+        image.resize((256, 256), Image.BICUBIC))
+    print('pass image processing')
+    return image
